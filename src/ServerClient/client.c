@@ -1,10 +1,13 @@
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/socket.h> //socket steps, and protocols
 #include <arpa/inet.h>
 
 #define BUFF_SIZE 4096
+
 
 int main(int argc, char *argv[])
 {
@@ -30,7 +33,7 @@ int main(int argc, char *argv[])
   bzero(&output, sizeof(output));
   int client_sock = socket(AF_INET, SOCK_STREAM, 0);
   if (client_sock < 0) {
-    printf("Unable to bind\n");
+    printf("Socket creation error\n");
     return -1;
   }
 
@@ -38,14 +41,26 @@ int main(int argc, char *argv[])
   bzero(&server_addr, sizeof(server_addr));
   server_addr.sin_family = AF_INET;
   server_addr.sin_addr.s_addr = inet_addr(IP_ADDR);
-  server_addr.sin_port = htonl(PORT);
+  server_addr.sin_port = htons(PORT);
 
-  if (connect(client_sock, (struct sockaddr *) &server_addr, sizeof(output)) < 0) {
+  if (connect(client_sock, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
+    printf("%s\n", strerror(errno));
     printf("Unable to connect to server\n");
     return -1;
   }
 
-  sprintf(output, "Hellow World!\n")
+  //Return statement to prematurely stop program.
+  return 0;
 
+  sprintf(output, "Hello World!\n");
+  size_t output_bytes = sizeof(output);
+
+  if (write(client_sock, output, output_bytes) != output_bytes) {
+    printf("Unable to write.\n");
+    return -1;
+  }
+
+  
   return 0;
 }
+
