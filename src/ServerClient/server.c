@@ -15,9 +15,14 @@ void handle_connection(int client_sock) {
   //Buffers to read and write input and output
   char input[BUFF_SIZE];
   bzero(input, BUFF_SIZE);
+  char username[BUFF_SIZE];
+  bzero(username, BUFF_SIZE);
   int n;
 
   printf("We've received a new connection!\n");
+
+  read(client_sock, username, BUFF_SIZE);
+  username[strcspn(username, "\n")] = 0;
 
   while (1) {
     read(client_sock, input, BUFF_SIZE);
@@ -25,7 +30,7 @@ void handle_connection(int client_sock) {
       printf("Server Exiting...\n");
       break;
     } 
-    printf("%s", input);
+    printf("%s: %s", username, input);
     bzero(input, BUFF_SIZE);
     n = 0; 
   }

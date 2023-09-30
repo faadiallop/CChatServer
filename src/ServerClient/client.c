@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <sys/socket.h> //socket steps, and protocols
 #include <arpa/inet.h>
 
@@ -10,7 +11,6 @@
 
 void send_message(int client_sock, char input[]) {
 
-  printf("What is your message: ");
   int i = 0;
   //You can only do this comparison because \n is in single quotes.
   //The single quotes indicate a single character rather than a
@@ -29,11 +29,9 @@ void send_message(int client_sock, char input[]) {
     curr_bytes_written += num_written;
   }
 
-  bzero(input, BUFF_SIZE);
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   if (argc != 3) {
     printf("Not enough arguments.\n");
     return -1;
@@ -73,8 +71,20 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  while (strncmp(input, "\n", 1) != 0) {
+  bool message_prompt = false;
+  while (1) {
+    if (message_prompt == false) {
+      printf("What is your username? ");
+    } else {
+      printf("What is your message: ");
+    }
+    message_prompt = true;
     send_message(client_sock, input);
+    if (strncmp("\n", input, 1) == 0) {
+      printf("You have exited the group chat!\n");
+      break;
+    }
+    bzero(input, BUFF_SIZE);
   }
   return 0;
 }
