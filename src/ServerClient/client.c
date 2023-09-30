@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
   char output[BUFF_SIZE+1];
   //YOU MIGHT NOT NEED THE OUTPUT BUFFER!!!!!
   char input[BUFF_SIZE+1];
+  int status;
 
   bzero(&output, sizeof(output));
   int client_sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -42,22 +43,24 @@ int main(int argc, char *argv[])
   server_addr.sin_family = AF_INET;
   server_addr.sin_addr.s_addr = inet_addr(IP_ADDR);
   server_addr.sin_port = htons(PORT);
-
-  if (connect(client_sock, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
+  status = connect(client_sock, (struct sockaddr *) &server_addr, sizeof(server_addr));
+  if (status < 0) {
     printf("%s\n", strerror(errno));
     printf("Unable to connect to server\n");
     return -1;
   }
 
-  //Return statement to prematurely stop program.
-  return 0;
 
-  sprintf(output, "Hello World!\n");
-  size_t output_bytes = sizeof(output);
-
-  if (write(client_sock, output, output_bytes) != output_bytes) {
-    printf("Unable to write.\n");
-    return -1;
+  char* text = "Hello World!\n";
+  size_t curr_bytes_written = 0;
+  size_t num_to_write = strlen(text);
+  while (curr_bytes_written < num_to_write) {
+    size_t num_written = write(client_sock, text + curr_bytes_written, num_to_write - curr_bytes_written);
+    if (num_written == -1) {
+      printf("Unable to write.\n");
+      return -1;
+    }
+    curr_bytes_written += num_written;
   }
 
   

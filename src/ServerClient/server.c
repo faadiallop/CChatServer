@@ -4,44 +4,54 @@
 #include <unistd.h>
 #include <sys/socket.h> //socket steps, and protocols
 #include <arpa/inet.h>
+#include <sys/ioctl.h>
 
 #define BUFF_SIZE 4096
 #define PATH_SIZE 4096
 
 void handle_connection(int client_sock) {
+  //printf("We've received a new connection!\n");
+  //close(client_sock);
+  //return;
+  //Buffers to read and write input and output
+  char input[BUFF_SIZE];
 
   printf("We've received a new connection!\n");
-  close(client_sock);
-  return;
-  //Buffers to read and write input and output
-  char output[BUFF_SIZE+1];
-  char input[BUFF_SIZE+1];
 
-  size_t bytes_read;
-  int msg_size = 0;
-  char actual_path[PATH_SIZE];
-  return;
+  size_t curr_bytes_read = 0;
+  ssize_t num_read = 1; 
+  while (num_read > 0) {
+    num_read = read(client_sock, &input[curr_bytes_read], BUFF_SIZE - curr_bytes_read);
+    if (num_read == -1) {
+      printf("Unable to read in data.\n");
+      return;
+    }
+    curr_bytes_read += num_read;
+  }
+  printf("%s\n", input);
+
+  close(client_sock);
+  printf("The connection has been closed\n");
 }
 
 int main(int argc, char *argv[]) {
-  if (argc != 3) {
+  if (argc != 2) {
     printf("Not enough arguments.\n");
+    printf("Please include a port number.\n");
     return -1;
   }
   
-  //SANITIZE THESE INPUTS
-  char* IP_ADDR = argv[1];
-  if (strcmp(argv[1], "loopback") == 0) {
-    //You're allowed to redefine this variable because
-    //it generates another string literal corresponding
-    //to "127.0.0.1" which IP_ADDR is then pointed to.
-    IP_ADDR = "127.0.0.1";
-  }
-  unsigned short PORT = (unsigned short) atoi(argv[2]);
+  unsigned short PORT = (unsigned short) atoi(argv[1]);
 
   int server_sock = socket(AF_INET, SOCK_STREAM, 0);
   if (server_sock < 0) {
     printf("Socket creation failed!\n");
+    return -1;
+  }
+  int opt_value = 1;
+  int status = setsockopt(server_sock, SOL_SOCKET, SO_REUSEPORT, &opt_value, sizeof(opt_value));
+  if (status < 0) {
+    printf("Unable to set options correctly.");
     return -1;
   }
 
