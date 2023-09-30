@@ -7,7 +7,6 @@
 #include <sys/ioctl.h>
 
 #define BUFF_SIZE 4096
-#define PATH_SIZE 4096
 
 void handle_connection(int client_sock) {
   //printf("We've received a new connection!\n");
@@ -15,23 +14,24 @@ void handle_connection(int client_sock) {
   //return;
   //Buffers to read and write input and output
   char input[BUFF_SIZE];
+  bzero(input, BUFF_SIZE);
+  int n;
 
   printf("We've received a new connection!\n");
 
-  size_t curr_bytes_read = 0;
-  ssize_t num_read = 1; 
-  while (num_read > 0) {
-    num_read = read(client_sock, &input[curr_bytes_read], BUFF_SIZE - curr_bytes_read);
-    if (num_read == -1) {
-      printf("Unable to read in data.\n");
-      return;
-    }
-    curr_bytes_read += num_read;
+  while (1) {
+    read(client_sock, input, BUFF_SIZE);
+    if (strncmp("\n", input, 1) == 0) {
+      printf("Server Exiting...\n");
+      break;
+    } 
+    printf("%s", input);
+    bzero(input, BUFF_SIZE);
+    n = 0; 
   }
-  printf("%s\n", input);
 
   close(client_sock);
-  printf("The connection has been closed\n");
+  printf("The connection has been closed!\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   int client_sock;
   struct sockaddr_in client_addr;
 
-  //while (1) {
+  while (1) {
     printf("Waiting for connections...\n");
 
     client_sock = accept(server_sock, (struct sockaddr *)&client_addr, (socklen_t *)&addr_size);
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
       return -1;
     }
     handle_connection(client_sock);
-  //}
+  }
 
   close(server_sock);
 

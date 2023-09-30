@@ -8,6 +8,29 @@
 
 #define BUFF_SIZE 4096
 
+void send_message(int client_sock, char input[]) {
+
+  printf("What is your message: ");
+  int i = 0;
+  //You can only do this comparison because \n is in single quotes.
+  //The single quotes indicate a single character rather than a
+  //char *.
+  while ((input[i++] = getchar()) != '\n');
+  printf("%s", input);
+
+  size_t curr_bytes_written = 0;
+  size_t num_to_write = strlen(input);
+  while (curr_bytes_written < num_to_write) {
+    size_t num_written = write(client_sock, input + curr_bytes_written, num_to_write - curr_bytes_written);
+    if (num_written == -1) {
+      printf("Unable to write.\n");
+      return;
+    }
+    curr_bytes_written += num_written;
+  }
+
+  bzero(input, BUFF_SIZE);
+}
 
 int main(int argc, char *argv[])
 {
@@ -50,20 +73,9 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-
-  char* text = "Hello World!\n";
-  size_t curr_bytes_written = 0;
-  size_t num_to_write = strlen(text);
-  while (curr_bytes_written < num_to_write) {
-    size_t num_written = write(client_sock, text + curr_bytes_written, num_to_write - curr_bytes_written);
-    if (num_written == -1) {
-      printf("Unable to write.\n");
-      return -1;
-    }
-    curr_bytes_written += num_written;
+  while (strncmp(input, "\n", 1) != 0) {
+    send_message(client_sock, input);
   }
-
-  
   return 0;
 }
 
