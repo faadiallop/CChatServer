@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <sys/socket.h> //socket steps, and protocols
@@ -9,6 +10,15 @@
 
 #define BUFF_SIZE 4096
 
+void* read_messages(void* pclient_sock) {
+  int client_sock = *((int*) pclient_sock);
+  free(pclient_sock);
+  char input[BUFF_SIZE];
+  bzero(input, BUFF_SIZE);
+
+  read(client_sock, input, BUFF_SIZE);
+  printf("%s", input);
+}
 void send_message(int client_sock, char input[]) {
 
   int i = 0;
@@ -85,6 +95,10 @@ int main(int argc, char *argv[]) {
       break;
     }
     bzero(input, BUFF_SIZE);
+    pthread_t thread;
+    int *pclient = malloc(sizeof(int));
+    *pclient = client_sock;
+    pthread_create(&thread, NULL, read_messages, pclient);
   }
   return 0;
 }

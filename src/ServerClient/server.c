@@ -8,11 +8,14 @@
 #include <sys/ioctl.h>
 
 #define BUFF_SIZE 4096
+int connections[10];
+int client_index = 0;
 
 //p before a variable means it's a pointer
-void* handle_connection(void* pclient_sock) {
-  int client_sock = *((int*) pclient_sock);
-  free(pclient_sock); //We don't need this pointer anymore.
+void* handle_connection() {
+  
+  int client_sock = connections[client_index];
+  client_index++;
   //printf("We've received a new connection!\n");
   //close(client_sock);
   //return;
@@ -22,6 +25,7 @@ void* handle_connection(void* pclient_sock) {
   char username[BUFF_SIZE];
   bzero(username, BUFF_SIZE);
   int n;
+
 
   printf("We've received a new connection!\n");
 
@@ -35,6 +39,10 @@ void* handle_connection(void* pclient_sock) {
       break;
     } 
     printf("%s: %s", username, input);
+    for (int i = 0; i < client_index; i++) {
+      write(connections[i], username, BUFF_SIZE);
+      write(connections[i], input, BUFF_SIZE);
+    }
     bzero(input, BUFF_SIZE);
     n = 0; 
   }
@@ -88,22 +96,18 @@ int main(int argc, char *argv[]) {
   printf("Server Socket is listening on port %hu!\n", PORT);
 
   int addr_size = sizeof(struct sockaddr_in);
-  int client_sock;
   struct sockaddr_in client_addr;
 
   while (1) {
     printf("Waiting for connections...\n");
-    fflush(stdout);
 
-    client_sock = accept(server_sock, (struct sockaddr *)&client_addr, (socklen_t *)&addr_size);
-    if (client_sock < 0) {
+    connections[client_index] = accept(server_sock, (struct sockaddr *)&client_addr, (socklen_t *)&addr_size);
+    if (connections[client_index] < 0) {
       printf("Connected!\n");
       return -1;
     }
     pthread_t thread;
-    int *pclient = malloc(sizeof(int));
-    *pclient = client_sock;
-    pthread_create(&thread, NULL, handle_connection, pclient);
+    pthread_create(&thread, NULL, handle_connection, NULL);
   }
 
   close(server_sock);
