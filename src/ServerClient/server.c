@@ -2,13 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <sys/socket.h> //socket steps, and protocols
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
 
 #define BUFF_SIZE 4096
 
-void handle_connection(int client_sock) {
+//p before a variable means it's a pointer
+void* handle_connection(void* pclient_sock) {
+  int client_sock = *((int*) pclient_sock);
+  free(pclient_sock); //We don't need this pointer anymore.
   //printf("We've received a new connection!\n");
   //close(client_sock);
   //return;
@@ -37,6 +41,7 @@ void handle_connection(int client_sock) {
 
   close(client_sock);
   printf("The connection has been closed!\n");
+  return NULL;
 }
 
 int main(int argc, char *argv[]) {
@@ -88,13 +93,17 @@ int main(int argc, char *argv[]) {
 
   while (1) {
     printf("Waiting for connections...\n");
+    fflush(stdout);
 
     client_sock = accept(server_sock, (struct sockaddr *)&client_addr, (socklen_t *)&addr_size);
     if (client_sock < 0) {
       printf("Connected!\n");
       return -1;
     }
-    handle_connection(client_sock);
+    pthread_t thread;
+    int *pclient = malloc(sizeof(int));
+    *pclient = client_sock;
+    pthread_create(&thread, NULL, handle_connection, pclient);
   }
 
   close(server_sock);
